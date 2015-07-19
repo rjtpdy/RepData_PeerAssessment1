@@ -7,19 +7,60 @@ output:
 
 
 ## Loading and preprocessing the data
-
-
+```{r echo=TRUE}
+act <- read.csv("activity.csv")
+library(ggplot2)
+library(lattice)
+```
 
 ## What is mean total number of steps taken per day?
-
-
+```{r echo=TRUE}
+stepsperday <- tapply(act$steps,act$date,sum,na.rm=TRUE)
+qplot(stepsperday,binwidth=21194/11)
+Mean <- tapply(act$steps,act$date,mean,na.rm=TRUE)  
+Median <- tapply(act$steps,act$date,median,na.rm=TRUE)
+```
+The Mean of Steps per day is`r Mean` and Median is `r Median`.  
 
 ## What is the average daily activity pattern?
-
-
+```{r echo=TRUE}
+b <- tapply(act$steps,act$interval,mean,na.rm=TRUE)
+x <- unique(act$interval)
+plot(as.factor(x),b,type="l",xlab="Interval",ylab="Average Steps",
+     col="red")
+Max <- b[b==max(b)]
+```
+Max is the 5 min interval that contains max no. of steps.  
 
 ## Imputing missing values
-
-
+```{r echo=TRUE}
+STEPS <- act$steps
+STEPS[is.na(STEPS)] <- b
+act2 <- data.frame(STEPS,DATE=act$date,INTERVAL=act$interval)
+qplot(tapply(act2$STEPS,act2$DATE,sum),binwidth=21153/11)
+Mean2 <- tapply(act2$STEPS,act2$DATE,mean)
+Median2 <- tapply(act2$STEPS,act2$DATE,median)
+```
+The Mean of Steps per day is`r Mean2` and Median is `r Median2`.  
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r echo=TRUE}
+type <- vector()
+v <- weekdays(as.Date(act$date))=="Sunday"
+type[v] <- "weekend"
+type[!v] <- "weekday"
+library("dplyr")
+act <- mutate(act,type)
+actweek <- filter(act,type=="weekday")
+actweend <- filter(act,type=="weekend")
+p <- tapply(actweek$steps,actweek$interval,mean,na.rm=TRUE)
+p1 <- tapply(actweend$steps,actweend$interval,mean,na.rm=TRUE)
+y <- as.data.frame(p)
+y1 <- as.data.frame(p1)
+colnames(y) <- c("meen")
+colnames(y1) <- c("meen")
+y <- mutate(y,INTERVAL=x,type="weekdays")
+y1 <- mutate(y1,INTERVAL=x,type="weekend")
+y2 <- rbind(y,y1)
+xyplot(meen~INTERVAL|type,data=y2,layout=c(1,2),type="l",xlab="Mean")
+```
